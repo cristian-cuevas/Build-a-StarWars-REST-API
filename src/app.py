@@ -49,3 +49,44 @@ def handle_hello():
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=False)
+
+
+@app.route('/users')
+def listUser():
+    all_users = User.query.all()
+    all_users = list(map(lambda user: user.serialize(), all_users))
+    return jsonify(all_users)
+
+@app.route('/user', methods = ['POST'])
+def add():
+    data = request.get_json()
+    print (data)
+    if data['id'] is None or data['email'] is None:
+        return 'Empty params'
+    if 'password' not in data:
+        return 'Empty password'
+    user = User()
+    user.id = data['id']
+    user.email = data['email']
+    user.is_active = True
+    user.password = data['password']
+    db.session.add(user)
+    db.session.commit()
+    print (user.__repr__())
+    return user.serialize()
+
+@app.route('/user/<int:userId>', methods = ['DELETE'])
+def delete(userId):
+    user = User.query.get(userId)
+    if user is None:
+        return "User doesn't exist", 204
+    db.session.delete(user)
+    db.session.commit()
+    return "Deleted", 200
+
+@app.route('/user/<int:id>')
+def get(id):
+    user = User.query.get(id)
+    if user is None:
+        return {}
+    return user.serialize()
